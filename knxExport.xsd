@@ -28,6 +28,7 @@
                         <xs:attribute name="Name" type="xs:string"/>
                         <xs:attribute name="RangeStart" type="xs:string"/>
                         <xs:attribute name="RangeEnd" type="xs:string"/>
+                        <xs:attribute name="Description" type="xs:string"/>
                     </xs:complexType>
                 </xs:element>
             </xs:sequence>

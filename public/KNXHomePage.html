@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <title>Home Control 5000</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Home Control 5000</h1>
+        <ul id="tabs" class="nav nav-tabs" role="tablist"></ul>
+        <div class="tab-content" id="tabContents">
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/createUserInterfaceFunctions.js"></script>
+    <script src="/clientServerInteractions.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p"
+        crossorigin="anonymous"></script>
+
+    <script>
+        document.body.style.backgroundColor = "lightgrey";
+
+        $(document).ready(async function () {
+
+            $.get('/getMasterStructure', async (masterStructure) => {
+
+                console.log(masterStructure)
+                var previousFunctionalCard = null
+
+                masterStructure.groupRange.forEach(mainGroup => {
+                    console.log(mainGroup.description)
+                    if (mainGroup.description == 'tab') {
+                        appendTab(mainGroup.name, 'tabs', 'tabContents')
+                        createNavTabsAndTabContent(mainGroup.name, mainGroup.name)
+                        mainGroup.groupRange.forEach(middleGroup => {
+                            appendTab(middleGroup.name, mainGroup.name + "_tab", mainGroup.name + "_content")
+                            appendCardsToTab(middleGroup.name)
+                            var elementCounter = 0
+
+                            middleGroup.groupAddress.forEach(groupAddress => {
+                                if (groupAddress.displayAttributesSet) {
+
+                                    var elementToAppendTo
+                                    var functionalGroupCard
+
+                                    if ((previousFunctionalCard != groupAddress.functionGroup) && (elementCounter % 4) != 0) {
+
+                                        while ((elementCounter % 4) != 0) {
+                                            var col = document.createElement("div")
+                                            col.classList.add("col-sm")
+                                            functionalGroupCard = document.getElementById(`${middleGroup.name}_${previousFunctionalCard}`)
+                                            elementToAppendTo = getLastRow(functionalGroupCard)
+                                            var appendedCol = elementToAppendTo.appendChild(col)
+                                            elementCounter++
+                                        }
+                                    }
+                                    var functionalGroupCard = document.getElementById(`${middleGroup.name}_${groupAddress.functionGroup}`)
+                                    previousFunctionalCard = groupAddress.functionGroup
+
+                                    if ((elementCounter % 4) == 0) {
+                                        var row = document.createElement("div")
+                                        row.classList.add("row")
+                                        row.style.marginBottom = "5px"
+                                        console.log("**************************")
+                                        console.log(groupAddress.name)
+                                        console.log(middleGroup.name)
+                                        console.log(functionalGroupCard)
+                                        console.log(groupAddress)
+                                        console.log("**************************")
+                                        var appendedRow = functionalGroupCard.appendChild(row)
+                                        elementToAppendTo = appendedRow
+                                    }
+                                    else {
+                                        elementToAppendTo = getLastRow(functionalGroupCard)
+                                    }
+                                    var col = document.createElement("div")
+                                    col.classList.add("col-sm")
+                                    var appendedCol = elementToAppendTo.appendChild(col)
+
+                                    createElementAndAppend(mainGroup, middleGroup, groupAddress, appendedCol)
+                                    console.log('created elemenet')
+                                    elementCounter++
+                                }
+                            })
+                        })
+                    }
+                });
+                var allButtons = document.getElementsByClassName('relevantForUpdate')
+                console.log('allButtons')
+                console.log(allButtons)
+                for (var i = 0; i < allButtons.length; i++) {
+                    await readAndSetStatus(allButtons[i])
+                }
+            })
+        })
+
+    </script>
+
+
+</body>
+
+</html>

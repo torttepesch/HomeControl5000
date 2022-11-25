@@ -3,3 +3,5 @@ node_modules/
 mappings/
 .vscode/
 Grouppenaddressen.xml
+.env
+package-lock.json

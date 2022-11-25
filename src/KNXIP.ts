@@ -5,48 +5,60 @@ const server = http.createServer(app)
 const path = require('path');
 const io = require('socket.io')(server);
 const logging = require('./dataLogger')
+require('dotenv')
 
+import { Request, Response, NextFunction } from 'express';
+import "reflect-metadata"
+
+app.use(express.static(path.resolve(__dirname, '../public')))
 app.use(express.json());
-app.use(express.static('public'))
 
-
-const knxClientPromise = require('./knxClient')
+import {discoverAndConnectKnxClient} from './knxClient'
 const knxStructureImporter = require('./ImprtKnx')
 const xmlToKnxConverter = require('./XmlToKnxConverter');
 
-var knxMasterStruct = {}
+import { DataSource } from "typeorm"
+import { CurrentTemperature } from "./entity/currentTemperature"
+import { HeatingActuatorValue } from "./entity/heatingActuatorValue"
+import { TargetTemperature } from "./entity/targetTemperature"
+import { initializeDb } from "./databaseConnector"
+
+
+var knxMasterStruct: any
 var knxStructureFromXml = {}
-var knxClient = {}
+var knxMasterStructForClient = {}
 
 io.on('connection', client => { })
+
 
 startUp()
 
 async function startUp() {
-  knxClient = await knxClientPromise.discoverAndConnectKnxClient()
-  knxClient.on("indication", handleBusEvent);
-  knxClient.monitorBus()
-  knxStructureFromXml = await knxStructureImporter.updateKnxStructure('Grouppenaddressen.xml', 'knxExport.xsd')
-  knxMasterStruct = xmlToKnxConverter.convertXmlStructureToKnxClient(knxStructureFromXml, knxClient, true)
-  server.listen(80, () => console.log(`Listening on 5000`))
+  initializeDb()
+  // var knxClient: any = await discoverAndConnectKnxClient()
+  // knxClient.on("indication", handleBusEvent);
+  // knxClient.monitorBus()
+  // knxStructureFromXml = await knxStructureImporter.updateKnxStructure('Grouppenaddressen.xml', 'knxExport.xsd')
+  // knxMasterStruct = xmlToKnxConverter.convertXmlStructureToKnxClient(knxStructureFromXml, knxClient, true)
+  // knxMasterStructForClient = xmlToKnxConverter.convertXmlStructureToKnxClient(knxStructureFromXml, knxClient, false)
+  // server.listen(process.env.PORT, () => console.log(`Listening on 5000`))
 }
 
-app.get('/getMasterStructure', function (req, res) {
-  var knxMasterStructForClient = xmlToKnxConverter.convertXmlStructureToKnxClient(knxStructureFromXml, knxClient, false)
+app.get('/getMasterStructure', function (req: Request, res: Response) {
   res.status(200).send(knxMasterStructForClient)
 })
 
-app.get('/', function (req, res) {
-  res.sendFile(path.join(__dirname + '/KNXHomePage.html'));
+app.get('/', function (req: Request, res: Response) {
+  res.sendFile(path.resolve(__dirname, '../public', 'KNXHomePage.html'));
 });
 
-app.post('/groupAddressCall/button', async function (req, res) {
+app.post('/groupAddressCall/button', async function (req: Request, res: Response) {
   var requestedKnxGroupAddressCall = req.body
   var groupRangeObject = findKnxGroupAddress(requestedKnxGroupAddressCall)
   readStatusAndSetValueOnBus(groupRangeObject, res)
 })
 
-app.post('/groupAddressCall/impulse', async function (req, res) {
+app.post('/groupAddressCall/impulse', async function (req: Request, res: Response) {
   var requestedKnxGroupAddressCall = req.body
   var groupRangeObject = findKnxGroupAddress(requestedKnxGroupAddressCall)
   try {
@@ -58,19 +70,19 @@ app.post('/groupAddressCall/impulse', async function (req, res) {
   }
 })
 
-app.post('/groupAddressCall/setAbsoluteValue', async function (req, res) {
+app.post('/groupAddressCall/setAbsoluteValue', async function (req: Request, res: Response) {
   var requestedKnxGroupAddressCall = req.body
   var groupRangeObject = findKnxGroupAddress(requestedKnxGroupAddressCall)
   setAbsoluteValue(groupRangeObject, requestedKnxGroupAddressCall.value, res)
 })
 
-app.post('/groupAddressCall/incrementDecrement', async function (req, res) {
+app.post('/groupAddressCall/incrementDecrement', async function (req: Request, res: Response) {
   var requestedKnxGroupAddressCall = req.body
   var groupRangeObject = findKnxGroupAddress(requestedKnxGroupAddressCall)
   sendIncrementDecrementOnBus(groupRangeObject, requestedKnxGroupAddressCall.changeDirection, res)
 })
 
-app.post('/groupAddressValue', async function (req, res) {
+app.post('/groupAddressValue', async function (req: Request, res: Response) {
   try {
     var requestedKnxGroupAddressCall = req.body
     var groupRangeObject = findKnxGroupAddress(requestedKnxGroupAddressCall)
@@ -78,15 +90,15 @@ app.post('/groupAddressValue', async function (req, res) {
   } catch { }
 })
 
-function findKnxGroupAddress(requestedKnxGroupAddressCall) {
+function findKnxGroupAddress(requestedKnxGroupAddressCall: any) {
   var requestedMainGroup = knxMasterStruct.groupRange.find(obj => { return obj.name == requestedKnxGroupAddressCall.mainGroup })
   var requestedMiddleGroup = requestedMainGroup.groupRange.find(obj => { return obj.name == requestedKnxGroupAddressCall.middleGroup })
   var requestedGroupAddress = requestedMiddleGroup.groupAddress.find(obj => { return obj.name == requestedKnxGroupAddressCall.groupAddress })
   return requestedGroupAddress
 }
 
-function findKnxGroupAdressObjectByGroupAdress(groupAddressString) {
-  var requestedGroupAddress
+function findKnxGroupAdressObjectByGroupAdress(groupAddressString: any) {
+  var requestedGroupAddress: any
   knxMasterStruct.groupRange.some(mainGroup => {
     mainGroup.groupRange.some(middleGroup => {
       middleGroup.groupAddress.some(groupAddressObject => {
@@ -120,7 +132,7 @@ const handleBusEvent = async function (srcAddress, dstAddress, npdu) {
   }
 };
 
-async function readStatusAndSetValueOnBus(groupRangeObject, res) {
+async function readStatusAndSetValueOnBus(groupRangeObject: any, res: Response) {
   var status = await groupRangeObject.knxFunction.read()
   console.log(status)
   if (!status) {
@@ -134,14 +146,14 @@ async function readStatusAndSetValueOnBus(groupRangeObject, res) {
   }
 }
 
-async function setAbsoluteValue(groupRangeObject, value, res) {
+async function setAbsoluteValue(groupRangeObject: any, value: number, res: Response) {
   console.log(groupRangeObject.knxFunction.type)
   await groupRangeObject.knxFunction.write(value)
   console.log('written')
   res.status(200).end()
 }
 
-async function sendIncrementDecrementOnBus(groupRangeObject, direction, res) {
+async function sendIncrementDecrementOnBus(groupRangeObject: any, direction: number, res: Response) {
   if (groupRangeObject.mainDataPointType == '1') {
     await groupRangeObject.knxFunction.write(direction)
   }
@@ -153,7 +165,7 @@ async function sendIncrementDecrementOnBus(groupRangeObject, direction, res) {
   res.status(200).end()
 }
 
-async function readStatusAndSendToClient(groupRangeObject, res) {
+async function readStatusAndSendToClient(groupRangeObject: any, res: Response) {
   console.log(groupRangeObject.address)
   try {
     var value = await groupRangeObject.knxFunction.read()
@@ -171,12 +183,12 @@ function formatGroupAdress(groupAddress) {
   return splitAddress.join('.')
 }
 
-process
-  .on('unhandledRejection', (reason, p) => {
-    logging.logError(reason)
-    process.exit(1);
-  })
-  .on('uncaughtException', err => {
-    logging.logError(err)
-    process.exit(1);
-  });
+// process
+//   .on('unhandledRejection', (reason, p) => {
+//     logging.logError(reason)
+//     process.exit(1);
+//   })
+//   .on('uncaughtException', err => {
+//     logging.logError(err)
+//     process.exit(1);
+//   });

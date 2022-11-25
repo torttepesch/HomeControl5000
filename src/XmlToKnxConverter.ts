@@ -5,7 +5,6 @@ function convertXmlStructureToKnxClient(xmlStructure, knxClient, addKnxFunction)
     var xmlStructureTemp = JSON.parse(JSON.stringify(xmlStructure))
 
     xmlStructureTemp.groupRange.forEach(mainGroup => {
-        //console.log(mainGroup)
         mainGroup.groupRange.forEach(middleGroup => {
             //console.log(middleGroup)
             middleGroup.groupAddress.forEach(groupAddress => {
@@ -35,7 +34,7 @@ function createKnxBinding(knxClient, groupAddress) {
     //from ETS we only get the abstract description of a datapoint. Now we look it up in a list and set the dataPointType
     //then we create the datapoint with the correct address and dataPointType
     var dataPointTypeName = DataPoints.getDataPointType(groupAddress.mainDataPointType, groupAddress.subDataPointType)
-    knxFunction = DataPoints.createDataPoint(KnxAddressObject, dataPointTypeName);
+    var knxFunction = DataPoints.createDataPoint(KnxAddressObject, dataPointTypeName);
     // Bind the datapoints with the socket
     knxFunction.bind(knxClient)
     return knxFunction
