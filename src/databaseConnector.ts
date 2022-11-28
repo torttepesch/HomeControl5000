@@ -12,20 +12,9 @@ const homeControlDb = new DataSource({
     username: process.env.MYSQLUSER,
     password: process.env.MYSQLPW,
     database: process.env.MYSQLNAME,
-    synchronize: true,
+    // synchronize: true,
     entities: [CurrentTemperature, HeatingActuatorValue, TargetTemperature]
 })
-
-// const homeControlDb = new DataSource({
-//     type: "mysql",
-//     host: process.env.MYSQLIPADDRESS,
-//     port: 3306,
-//     username: `process.env.MYSQLUSER`,
-//     password: process.env.MYSQLPW,
-//     database: process.env.MYSQLNAME,
-//     synchronize: true,
-//     entities: [CurrentTemperature, HeatingActuatorValue, TargetTemperature]
-// })
 
 async function initializeDb() {
 

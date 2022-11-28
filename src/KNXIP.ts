@@ -35,13 +35,13 @@ startUp()
 
 async function startUp() {
   initializeDb()
-  // var knxClient: any = await discoverAndConnectKnxClient()
-  // knxClient.on("indication", handleBusEvent);
-  // knxClient.monitorBus()
-  // knxStructureFromXml = await knxStructureImporter.updateKnxStructure('Grouppenaddressen.xml', 'knxExport.xsd')
-  // knxMasterStruct = xmlToKnxConverter.convertXmlStructureToKnxClient(knxStructureFromXml, knxClient, true)
-  // knxMasterStructForClient = xmlToKnxConverter.convertXmlStructureToKnxClient(knxStructureFromXml, knxClient, false)
-  // server.listen(process.env.PORT, () => console.log(`Listening on 5000`))
+  var knxClient: any = await discoverAndConnectKnxClient()
+  knxClient.on("indication", handleBusEvent);
+  knxClient.monitorBus()
+  knxStructureFromXml = await knxStructureImporter.updateKnxStructure('Grouppenaddressen.xml', 'knxExport.xsd')
+  knxMasterStruct = xmlToKnxConverter.convertXmlStructureToKnxClient(knxStructureFromXml, knxClient, true)
+  knxMasterStructForClient = xmlToKnxConverter.convertXmlStructureToKnxClient(knxStructureFromXml, knxClient, false)
+  server.listen(process.env.PORT, () => console.log(`Listening on 5000`))
 }
 
 app.get('/getMasterStructure', function (req: Request, res: Response) {
@@ -116,19 +116,20 @@ function findKnxGroupAdressObjectByGroupAdress(groupAddressString: any) {
 
 const handleBusEvent = async function (srcAddress, dstAddress, npdu) {
   var groupAddressObject = findKnxGroupAdressObjectByGroupAdress(formatGroupAdress(dstAddress.toString()))
+  console.log('***************************************************')
   console.log(groupAddressObject.name)
   console.log(groupAddressObject.middleGroupName)
   console.log(`${srcAddress.toString()} -> ${dstAddress}`);
   console.log(`is groupRead: ${npdu.isGroupRead}`)
   console.log(`is groupResponse: ${npdu.isGroupResponse}`)
   console.log(`is groupWrite: ${npdu.isGroupWrite}`)
-  console.log('***************************************************')
   if (npdu.isGroupWrite) {
     var value = groupAddressObject.knxFunction.type.decode(npdu.dataValue)
     console.log(`value is: ${value}`)
     console.log(value)
     logging.logValue(groupAddressObject.middleGroupName, groupAddressObject.name, value)
     io.emit('updateGroupAddress', { groupAddress: formatGroupAdress(dstAddress.toString()), dataValue: value })
+    console.log('***************************************************')
   }
 };
 
