@@ -47,7 +47,48 @@ async function writeHeatingValueInDb(entity, room, value, date) {
     await homeControlDb.manager.save(entity)
 }
 
+async function readFromDb(room) {
+
+    var dateNow = new Date()
+    var dateYesterday = getPreviousDay(dateNow)
+    var dateNowString = formatDate(dateNow)
+    var dateYesterdayString = formatDate(dateYesterday)
+
+    console.log(dateNowString)
+    console.log(dateYesterdayString)
+    var data = await homeControlDb.manager.query(`SELECT id, timestamp, value FROM homecontrol5000database.current_temperature WHERE timeStamp BETWEEN '${dateYesterdayString}' AND '${dateNowString}' AND room = '${room}'`)
+    return data
+}
+
+function getPreviousDay(date) {
+    const previous = new Date(date.getTime());
+    previous.setDate(date.getDate() - 1);
+
+    return previous;
+}
+
+function padTo2Digits(num) {
+    return num.toString().padStart(2, '0');
+}
+
+function formatDate(date) {
+    return (
+        [
+            date.getFullYear(),
+            padTo2Digits(date.getMonth() + 1),
+            padTo2Digits(date.getDate()),
+        ].join('-') +
+        ' ' +
+        [
+            padTo2Digits(date.getHours()),
+            padTo2Digits(date.getMinutes()),
+            padTo2Digits(date.getSeconds()),
+        ].join(':')
+    );
+}
+
 module.exports = {
     logError: logError,
-    logValue: logValue
+    logValue: logValue,
+    readFromDb: readFromDb
 }

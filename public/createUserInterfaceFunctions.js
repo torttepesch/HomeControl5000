@@ -167,7 +167,7 @@ function addKnxAttributes(mainGroup, middleGroup, groupAddress, element) {
     element.classList.add('relevantForUpdate')
 }
 
-function createNavTabsAndTabContent(tabName, parentElement){
+function createNavTabsAndTabContent(tabName, parentElement) {
     var parent = document.getElementById(parentElement)
     console.log('addind')
     var navTab = $(`<ul class="nav nav-tabs" id="${tabName}_tab" role="tablist"></ul>`)
@@ -183,7 +183,7 @@ function appendTab(tabName, parentTab, parentTabContents) {
     $(`<div class="tab-pane" role="tabpanel" id=${tabName}>`).appendTo(tabContents)
 }
 
-function appendCardsToTab(tabName){
+function appendCardsToTab(tabName) {
     createCardElement('Licht', tabName).appendTo(`#${tabName}`)
     createCardElement('Heizung', tabName).appendTo(`#${tabName}`)
     createCardElement('Szenen', tabName).appendTo(`#${tabName}`)
@@ -221,4 +221,53 @@ function setImpulseValue(btn) {
         btn.classList.remove("btn-primary")
         btn.classList.add("btn-secondary")
     }, 1000)
+}
+
+function createTemperaturePlot(room, canvas) {
+    $.post({
+        url: '/getTemperatures',
+        data: JSON.stringify({ room: room }),
+        contentType: 'application/json; charset=utf-8'
+    })
+        .then((temperatureData) => {
+            var temperatureArray = temperatureData.map(a => a.value);
+            console.log(temperatureArray)
+            var labels = temperatureData.map(a => {
+                var timeDate = new Date(a.timestamp)
+                return (timeDate.toLocaleTimeString('en-GB'))
+            });
+            console.log(labels)
+
+            var data = {
+                labels: labels,
+                datasets: [{
+                    label: `${room} Raumtemperatur`,
+                    backgroundColor: 'rgb(255, 99, 132)',
+                    borderColor: 'rgb(255, 99, 132)',
+                    data: temperatureArray
+                }]
+            };
+
+            var config = {
+                type: 'line',
+                data: data,
+                options: {
+                    scales: {
+                        x: {
+                            ticks: {
+                                callback: function (val, index) {
+                                    return index % 6 === 0 ? this.getLabelForValue(val) : '';
+                                }
+                            }
+                        },
+                        y: {
+                            min: 17,
+                            max: 21
+                        }
+                    }
+                }
+            };
+            const myChart = new Chart(canvas, config);
+        })
+        .catch((error) => { reject(error) })
 }

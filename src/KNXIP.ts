@@ -13,7 +13,7 @@ import "reflect-metadata"
 app.use(express.static(path.resolve(__dirname, '../public')))
 app.use(express.json());
 
-import {discoverAndConnectKnxClient} from './knxClient'
+import { discoverAndConnectKnxClient } from './knxClient'
 const knxStructureImporter = require('./ImprtKnx')
 const xmlToKnxConverter = require('./XmlToKnxConverter');
 
@@ -34,7 +34,7 @@ io.on('connection', client => { })
 startUp()
 
 async function startUp() {
-  initializeDb()
+  await initializeDb()
   var knxClient: any = await discoverAndConnectKnxClient()
   knxClient.on("indication", handleBusEvent);
   knxClient.monitorBus()
@@ -51,6 +51,12 @@ app.get('/getMasterStructure', function (req: Request, res: Response) {
 app.get('/', function (req: Request, res: Response) {
   res.sendFile(path.resolve(__dirname, '../public', 'KNXHomePage.html'));
 });
+
+app.post('/getTemperatures', async function (req: Request, res: Response) {
+  var data = await logging.readFromDb(req.body.room)
+  console.log(data)
+  res.status(200).send(data)
+})
 
 app.post('/groupAddressCall/button', async function (req: Request, res: Response) {
   var requestedKnxGroupAddressCall = req.body
@@ -127,7 +133,9 @@ const handleBusEvent = async function (srcAddress, dstAddress, npdu) {
     var value = groupAddressObject.knxFunction.type.decode(npdu.dataValue)
     console.log(`value is: ${value}`)
     console.log(value)
-    logging.logValue(groupAddressObject.middleGroupName, groupAddressObject.name, value)
+    if (process.env.ENVIRONMENT == 'prod') {
+      logging.logValue(groupAddressObject.middleGroupName, groupAddressObject.name, value)
+    }
     io.emit('updateGroupAddress', { groupAddress: formatGroupAdress(dstAddress.toString()), dataValue: value })
     console.log('***************************************************')
   }
