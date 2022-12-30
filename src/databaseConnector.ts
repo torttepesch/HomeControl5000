@@ -1,4 +1,5 @@
 import { DataSource } from "typeorm"
+import { AirHumidity } from "./entity/airHumidity"
 import { CurrentTemperature } from "./entity/currentTemperature"
 import { HeatingActuatorValue } from "./entity/heatingActuatorValue"
 import { TargetTemperature } from "./entity/targetTemperature"
@@ -13,7 +14,7 @@ const homeControlDb = new DataSource({
     password: process.env.MYSQLPW,
     database: process.env.MYSQLNAME,
     // synchronize: true,
-    entities: [CurrentTemperature, HeatingActuatorValue, TargetTemperature]
+    entities: [CurrentTemperature, HeatingActuatorValue, TargetTemperature, AirHumidity]
 })
 
 async function initializeDb() {

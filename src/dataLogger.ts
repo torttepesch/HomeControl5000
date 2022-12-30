@@ -1,5 +1,6 @@
 var fs = require('fs')
 import { homeControlDb } from "./databaseConnector"
+import { AirHumidity } from "./entity/airHumidity"
 import { CurrentTemperature } from "./entity/currentTemperature"
 import { HeatingActuatorValue } from "./entity/heatingActuatorValue"
 import { TargetTemperature } from "./entity/targetTemperature"
@@ -19,14 +20,16 @@ function logError(errorMessage: string) {
 
 async function logValue(room: string, typeofValue: string, value: number) {
     var mapping = {
-        Raumtemperatur: 'CurrentTemperature',
-        Solltemperatur: 'TargetTemperature',
-        Stellgröße: 'HeatingActuatorValue'
+        "Raumtemperatur": 'CurrentTemperature',
+        "Solltemperatur": 'TargetTemperature',
+        "Stellgröße": 'HeatingActuatorValue',
+        "Relative Luftfeuchtigkeit": 'AirHumidity'
     }
     var date = new Date
     const currentTemperature = new CurrentTemperature()
     const heatingActuatorValue = new HeatingActuatorValue()
     const targetTemperature = new TargetTemperature()
+    const airHumidity = new AirHumidity
 
     if (mapping[typeofValue] == 'CurrentTemperature') {
         writeHeatingValueInDb(currentTemperature, room, value, date)
@@ -36,6 +39,9 @@ async function logValue(room: string, typeofValue: string, value: number) {
     }
     if (mapping[typeofValue] == 'TargetTemperature') {
         writeHeatingValueInDb(targetTemperature, room, value, date)
+    }
+    if (mapping[typeofValue] == 'AirHumidity') {
+        writeHeatingValueInDb(airHumidity, room, value, date)
     }
 }
 
