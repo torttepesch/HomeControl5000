@@ -62,8 +62,13 @@ async function readFromDb(room) {
 
     console.log(dateNowString)
     console.log(dateYesterdayString)
-    var data = await homeControlDb.manager.query(`SELECT id, timestamp, value FROM homecontrol5000database.current_temperature WHERE timeStamp BETWEEN '${dateYesterdayString}' AND '${dateNowString}' AND room = '${room}'`)
-    return data
+    var temperatureData = await homeControlDb.manager.query(`SELECT timestamp, value FROM homecontrol5000database.current_temperature WHERE timeStamp BETWEEN '${dateYesterdayString}' AND '${dateNowString}' AND room = '${room}'`)
+    var humidityData = await homeControlDb.manager.query(`SELECT timestamp, value FROM homecontrol5000database.air_humidity WHERE timeStamp BETWEEN '${dateYesterdayString}' AND '${dateNowString}' AND room = '${room}'`)
+    var targetTemperature = await homeControlDb.manager.query(`SELECT timestamp, value FROM homecontrol5000database.air_humidity WHERE timeStamp BETWEEN '${dateYesterdayString}' AND '${dateNowString}' AND room = '${room}'`)
+
+    return [temperatureData, humidityData]
+    // return {'Raumtemperatur': currentTemperature, 'Relative Luftfeuchtigkeit': humidity, 'Solltemperatur': targetTemperature}
+
 }
 
 function getPreviousDay(date) {

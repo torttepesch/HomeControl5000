@@ -225,49 +225,81 @@ function setImpulseValue(btn) {
 
 function createTemperaturePlot(room, canvas) {
     $.post({
-        url: '/getTemperatures',
+        url: '/getDataForRoom',
         data: JSON.stringify({ room: room }),
         contentType: 'application/json; charset=utf-8'
     })
-        .then((temperatureData) => {
-            var temperatureArray = temperatureData.map(a => a.value);
-            console.log(temperatureArray)
-            var labels = temperatureData.map(a => {
-                var timeDate = new Date(a.timestamp)
-                return (timeDate.toLocaleTimeString('en-GB'))
-            });
-            console.log(labels)
-
-            var data = {
-                labels: labels,
-                datasets: [{
-                    label: `${room} Raumtemperatur`,
-                    backgroundColor: 'rgb(255, 99, 132)',
-                    borderColor: 'rgb(255, 99, 132)',
-                    data: temperatureArray
-                }]
-            };
-
-            var config = {
-                type: 'line',
-                data: data,
-                options: {
-                    scales: {
-                        x: {
-                            ticks: {
-                                callback: function (val, index) {
-                                    return index % 6 === 0 ? this.getLabelForValue(val) : '';
-                                }
-                            }
-                        },
-                        y: {
-                            min: 17,
-                            max: 21
-                        }
-                    }
-                }
-            };
-            const myChart = new Chart(canvas, config);
+        .then((temperatureAndHumidity) => {
+            console.log(temperatureAndHumidity)
+            createPlot(room, canvas, temperatureAndHumidity)
         })
         .catch((error) => { reject(error) })
+}
+
+function createPlot(room, canvas, temperatureAndHumidity) {
+
+    var data = {}
+    data['datasets'] = []
+
+    if (temperatureAndHumidity[0].length > 0) {
+        var temperatureData = temperatureAndHumidity[0]
+
+        var tempData = temperatureData.map(a => ({ x: a.timestamp, y: a.value }))
+        console.log(tempData)
+
+        var tempDataset = {
+            label: `${room} Raumtemperatur`,
+            borderWidth: 1,
+            data: tempData,
+            borderColor: 'rgb(255, 0, 0)',
+            backgroundColor: 'rgb(255, 0, 0)',
+            yAxisID: 'tempY'
+        }
+
+        data.datasets.push(tempDataset)
+    }
+    if (temperatureAndHumidity[1].length > 0) {
+        var humidityData = temperatureAndHumidity[1]
+        var humidityData = humidityData.map(a => ({ x: a.timestamp, y: a.value }))
+
+        var humidityDataset = {
+            label: `${room} Relative Luftfeuchtigkeit`,
+            borderWidth: 1,
+            data: humidityData,
+            borderColor: 'rgb(0, 0, 255)',
+            backgroundColor: 'rgb(0, 0, 255)',
+            yAxisID: 'humidityY'
+        }
+        data.datasets.push(humidityDataset)
+
+    }
+
+    var config = {
+        type: 'line',
+        data: data,
+        options: {
+            scales: {
+                x: {
+                    type: 'time',
+                    time: {
+                        unit: 'hour'
+                    },
+                },
+                tempY: {
+                    type: 'linear',
+                    position: 'left',
+                    suggestedMin: 17,
+                    suggestedMax: 21
+                },
+                humidityY: {
+                    type: 'linear',
+                    position: 'right',
+                    suggestedMin: 55,
+                    suggestedMax: 100
+                }
+            }
+        }
+    };
+
+    const myChart = new Chart(canvas, config);
 }

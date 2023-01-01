@@ -52,7 +52,7 @@ app.get('/', function (req: Request, res: Response) {
   res.sendFile(path.resolve(__dirname, '../public', 'KNXHomePage.html'));
 });
 
-app.post('/getTemperatures', async function (req: Request, res: Response) {
+app.post('/getDataForRoom', async function (req: Request, res: Response) {
   var data = await logging.readFromDb(req.body.room)
   console.log(data)
   res.status(200).send(data)
@@ -192,12 +192,12 @@ function formatGroupAdress(groupAddress) {
   return splitAddress.join('.')
 }
 
-// process
-//   .on('unhandledRejection', (reason, p) => {
-//     logging.logError(reason)
-//     process.exit(1);
-//   })
-//   .on('uncaughtException', err => {
-//     logging.logError(err)
-//     process.exit(1);
-//   });
+process
+  .on('unhandledRejection', (reason, p) => {
+    logging.logError(reason)
+    process.exit(1);
+  })
+  .on('uncaughtException', err => {
+    logging.logError(err)
+    process.exit(1);
+  });
